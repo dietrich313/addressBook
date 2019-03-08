@@ -6,6 +6,7 @@
 		  crossorigin="anonymous">
 	  	</script>
 		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.7/dist/vue.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB868-3Dygb5Rc13JzU_ghFNznsulf6AEI&libraries=places&"></script>
 		<script src="main.js"></script>
 		<style>
 			.form-group{
@@ -58,35 +59,60 @@
 <body><div class="row">
   <div class="col-sm-3"></div>
 	<div class="col-sm-6" id="main">
-		<form id="addressForm" @submit="checkForm">
-			<div class="error">
-				<p class="error" v-if="errors.length">
-	    			<b>Please correct the following error(s):</b>
-	    			<ul>
-	      				<li v-for="error in errors">{{ error }}</li>
-	    			</ul>
-	  			</p>
-	  		</div>
-			<div class="form-group">
+		<form id="addressForm" @submit.prevent.stop="checkForm">
+			<div
+				v-bind:class="{
+					'form-group': true,
+					'has-error': errors.firstName && !contact.firstName
+				}"
+			>
 	    		<label for="firstName">First Name</label>
-	    		<input type="text" class="form-control" id="firstName" v-model="contact.firstName" placeholder="John">
+	    		<input type="text" class="form-control" id="firstName"@blur="checkEmpty(contact.firstName)" v-model.trim="contact.firstName" placeholder="John">
+	    		<p v-if="errors.firstName && !contact.firstName"> {{errors.firstName}} </p>
 	    	</div>
-	    	<div class="form-group">
+	    	<div
+	    		v-bind:class="{
+					'form-group': true,
+					'has-error':  errors.lastName && !contact.lastName
+				}"
+			>
 	    		<label for="lastName">Last Name</label>
-	    		<input type="text" class="form-control" id="lastName" v-model="contact.lastName" placeholder="Doe">
+	    		<input type="text" class="form-control" id="lastName" @blur="checkEmpty(contact.lastName)" v-model.trim="contact.lastName" placeholder="Doe">
+	    		<p v-if="!contact.lastName"> {{errors.lastName}}</p>
+	    		<p v-else= "errors.lastName = null"></p>
 	    	</div>
-	    	<div class="form-group">
-	    		<label for="Address">Address</label>
-	    		<input type="text" class="form-control" id="address" v-model="contact.address">
+	    	<div
+	    		v-bind:class="{
+					'form-group': true,
+					'has-error': errors.address && !contact.address
+				}"
+			>
+			<label for="Address">Address</label>
+	    		<input type="text" class="form-control" id="address" @blur="checkEmpty(contact.address)" v-model.trim="contact.address">
+	    		<p v-if="errors.address && !contact.address"> {{errors.address}}</p>
 	    		<div class ="map" id="map"></div>
 	    	</div>
-	    	<div class="form-group">
-	    		<label for="PhoneNumber">Phone Number</label>
-	    		<input type="text" minlength="2" maxlength="10" class="form-control" id="PhoneNumber" v-model="contact.phoneNumber">
+	    	<div
+	    		v-bind:class="{
+					'form-group': true,
+					'has-error': errors.phoneNumber && (!validPhone(contact.phoneNumber) || !contact.phoneNumber)
+				}"
+			>
+			<label for="PhoneNumber">Phone Number</label>
+	    		<input type="text" minlength="2" maxlength="10" class="form-control" id="phoneNumber" @blur="checkEmpty(contact.phoneNumber)" v-model.trim="contact.phoneNumber">
+	    		<p v-if="errors.phoneNumber && (!contact.phoneNumber)"> Please fill in your Phone Number</p>
+	    		<p v-else-if="errors.phoneNumber && !validPhone(contact.phoneNumber)">Please enter a valid Phone Number</p>
 	    	</div>
-	    	<div class="form-group">
-	    		<label for ="email">EMail</label>
-	    		<input type="email" class="form-control" id="email" v-model="contact.email">
+	    	<div
+	    		v-bind:class="{
+					'form-group': true,
+					'has-error': errors.email && (!validEmail(contact.email) || !contact.email)
+				}"
+			>
+			<label for ="email">EMail</label>
+	    		<input type="email" class="form-control" id="email" @blur="checkEmpty(contact.email)" v-model.trim="contact.email">
+	    		<p v-if="errors.email && (!contact.email)">Please fill in your email address</p>
+	    		<p v-else-if="errors.email && !validEmail(contact.email)">Please enter a valid email address</p>
 	    	</div>
 	    	<div class="text-center">
 				<button class="btn btn-primary" type="submit" value="Submit" id="add">Submit</button>
@@ -104,7 +130,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="(contact,index) in contacts" v-on:click="selectContact($event)">
+				<tr v-for="(contact,index) in contacts" v-on:click="selectContact(index)" v-bind:class="{selected: selectedIndex === index}">
 					<td>{{index}}</td>
 					<td>{{contact.firstName}}</td>
 					<td>{{contact.lastName}}</td>
@@ -116,14 +142,13 @@
 		</table>
 		<div class='form-inline'>
 			<div class="text-center">
-				<button class="btn btn-warning hidden" id="edit" v-on:click="editContact">Edit</button>
-				<button class="btn btn-danger hidden" id="remove" v-on:click="removeContact">Remove</button>
+				<button class="btn btn-warning" id="edit" v-on:click="editContact" v-bind:class="{hidden: isBeingEdited === true || isHidden === true}">Edit</button>
+				<button class="btn btn-danger" id="remove" v-on:click="removeContact" v-bind:class="{hidden: isBeingEdited === true || isHidden === true}">Remove</button>
 			</div>
 		</div>
 	</div>
 <div class="col-sm-3"></div>
 </div>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB868-3Dygb5Rc13JzU_ghFNznsulf6AEI&libraries=places&callback=initMap"
-        async defer></script>
+
  </body>
 </html>
